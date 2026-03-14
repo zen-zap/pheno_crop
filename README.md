@@ -10,3 +10,4 @@ Google Earth Engine source is not yet verified.
 + [Cloud Imputation - SEN12MS-CR](https://patricktum.github.io/cloud_removal/sen12mscr/)
 + [U-Net with Temporal Attention Encoder](https://github.com/Many98/Crop2Seg)
 + [Implementations of Cross-Attention Layers](https://github.com/likyoo/awesome-multimodal-remote-sensing-classification)
++ [L-TAE: Lightweight Temporal Attention Encoder](https://arxiv.org/abs/2007.00586)
