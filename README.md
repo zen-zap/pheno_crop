@@ -162,10 +162,41 @@ Model 2 improves trustworthiness through:
 
 The result is a cleaner estimate of field-level generalization while preserving the dual-sensor architecture that performed well in this project.
 
-Currently testing it on a larger dataset, will attach results once done.
+## Results: 
+
+- **Validation Accuracy**: 70.52% | **Macro-F1**: 0.6923
+
+- **Test Accuracy**: 70.83% | **Macro-F1**: 0.6929
+
+```
+[Test (Unseen Plots)] Loss: 1.1031 | Accuracy: 70.83% | Macro-F1: 0.6929
+Per-class recall:
+  [0] Bare: 0.7741
+  [1] Growth: 0.6705
+  [2] Ripening: 0.7424
+  [3] Seedling: 0.6426
+  [4] Tillering: 0.7538
+              precision    recall  f1-score   support
+
+        Bare       0.28      0.77      0.41       332
+      Growth       0.83      0.67      0.74       786
+    Ripening       0.75      0.74      0.75       427
+    Seedling       0.87      0.64      0.74       887
+   Tillering       0.92      0.75      0.83      1133
+
+    accuracy                           0.71      3565
+   macro avg       0.73      0.72      0.69      3565
+weighted avg       0.81      0.71      0.74      3565
+```
+
+**Confusion Matrix:**
+
+<img width="658" height="586" alt="image" src="https://github.com/user-attachments/assets/b154a55f-a425-4a2d-88c0-2ca4cac3873b" />
+
 
 <br>
 
+---
 
 ## References
 
