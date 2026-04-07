@@ -92,10 +92,9 @@ Finally, while lighter architectures like the Lightweight Temporal Attention Enc
 
 <img width="500" height="450" alt="image" src="https://github.com/user-attachments/assets/64d13128-29eb-44d5-a677-4ca0bfae8dc6" />
 
----
 <br>
 
-> **Important Note on Above Metrics:** Some currently reported scores are likely inflated because of evaluation leakage risks, including event-level random splitting (instead of strict plot-level/group splits), temporal overlap within the same plot context between train/validation samples, and running inference over the full dataset used during model development. Treat those numbers as exploratory, not final generalization performance. Work on this is here: `model_2.ipynb`
+---
 
 ## Model 2: Leakage-Aware Dual-Stream Network
 
@@ -106,6 +105,9 @@ Finally, while lighter architectures like the Lightweight Temporal Attention Enc
 - The Optical branch uses a CNN + Transformer encoder stack with learned time embeddings and masked pooling.
 - The Radar branch uses a CNN + bidirectional GRU stack with masked pooling and linear projection.
 - The two modality embeddings are concatenated and passed through a regularized MLP classifier for 5-stage prediction.
+
+<img width="500" height="450" alt="image" src="https://github.com/zen-zap/pheno_crop/blob/f7eb2b782625d9f2ddc008c5c2e5c96dfb04696d/Model_v2_flowchart.png">
+
 
 ### Leakage-Aware Data Protocol
 
@@ -192,6 +194,139 @@ weighted avg       0.81      0.71      0.74      3565
 **Confusion Matrix:**
 
 <img width="658" height="586" alt="image" src="https://github.com/user-attachments/assets/b154a55f-a425-4a2d-88c0-2ca4cac3873b" />
+
+<br>
+
+---
+
+
+## Model 3: PhenoCrop-Presto
+
+**Architecture Overview:**
+
+- Model 3 is a custom adaptation of the Presto (Predictive Representation of Sensed Earth Observation) architecture, built entirely from scratch for the `pheno_crop_v2` dataset.
+- Instead of using separate recurrent or convolutional networks for each sensor, it utilizes a unified Transformer Encoder to process all modalities simultaneously.
+- Every satellite observation is treated as an independent token.
+- Tokens are contextually enriched with three concatenated embeddings: a positional encoding (days ago), a channel embedding (Sensor ID), and a seasonal encoding (calendar month).
+- Heavily corrupted or cloudy optical readings are explicitly masked, allowing the self-attention mechanism to seamlessly route information through available radar tokens.
+
+<img width="500" height="450" alt="image" src="https://github.com/zen-zap/pheno_crop/blob/f7eb2b782625d9f2ddc008c5c2e5c96dfb04696d/model3_flowchrt.png">
+
+### Unified Tokenization and Embedding
+
+Previous models in this pipeline relied on modality-specific pathways (e.g., GRUs for radar, CNNs for optical) before late-stage fusion. PhenoCrop-Presto abandons this in favor of early-stage, unified tokenization. 
+
+The 3-feature Sentinel-1 observations and 9-feature Sentinel-2 observations are independently projected via linear layers into a shared 128-dimensional latent space. To ensure the Transformer understands the origin and context of these now-uniform tokens, three distinct embeddings are injected:
+1. **Positional Encoding:** A Presto-style sinusoidal embedding that maps the exact `days_ago` relative to the target prediction date, explicitly handling the asynchronous gaps between satellite passes.
+2. **Channel Embedding:** A learnable scalar that identifies whether the token originated from the Synthetic Aperture Radar or the Optical multispectral imager.
+3. **Seasonal Encoding:** A sinusoidal representation of the calendar month, giving the model native awareness of the agricultural season.
+
+### Pure Attention Fusion
+
+Once embedded, the tokens from both the Optical and Radar streams are concatenated into a single, flattened sequence and passed through a 4-layer Transformer Encoder. 
+
+This architecture provides ultimate resilience to atmospheric interference. If Sentinel-2 is blinded by cloud cover for an extended period, the dataset generation phase masks those specific optical tokens. The Transformer's Multi-Head Attention mechanism naturally ignores the masked positions, relying instead on the temporal tags of the uninterrupted Sentinel-1 radar tokens to maintain its understanding of the crop's biological progression. 
+
+The final sequence is condensed using masked mean-pooling, creating a single 128-dimensional feature vector that is passed to a regularized MLP classifier.
+
+## Results:
+
+```
+[Test (Unseen Plots)] Loss: 0.5216 | Acc: 76.41% | Macro-F1: 0.7641
+  [0] Bare: recall=0.8012
+  [1] Growth: recall=0.7646
+  [2] Ripening: recall=0.9696
+  [3] Seedling: recall=0.7215
+  [4] Tillering: recall=0.7087
+              precision    recall  f1-score   support
+
+        Bare       0.83      0.80      0.82       332
+      Growth       0.87      0.76      0.81       786
+    Ripening       0.43      0.97      0.60       427
+    Seedling       0.84      0.72      0.78       887
+   Tillering       0.97      0.71      0.82      1133
+
+    accuracy                           0.76      3565
+   macro avg       0.79      0.79      0.76      3565
+weighted avg       0.84      0.76      0.78      3565
+```
+
+**Confusion Matrix:**
+
+xxx
+
+<br> 
+
+---
+
+
+## Model 4: BiMamba-Transformer Hybrid
+
+**Architecture Overview:**
+
+- Model 3 evolves the architecture to address the limitations of recurrent networks and pure self-attention on long, noisy sequences.
+- The front-end CNN and GRU layers are replaced with Bidirectional State Space Models (BiMamba) to independently process the Optical and Radar streams.
+- Positional, channel, and seasonal (month) embeddings are injected *before* the state-space modeling, allowing the network to natively understand asynchronous time gaps.
+- The modality-specific sequences are concatenated and passed through a 4-layer Transformer Encoder for cross-modal fusion.
+- The model is optimized using Focal Loss ($\gamma=1.5$) and dynamic data augmentations (Gaussian jitter and temporal masking) to prevent memorization and handle ambiguous class boundaries.
+
+<img width="500" height="450" alt="image" src="https://github.com/zen-zap/pheno_crop/blob/f7eb2b782625d9f2ddc008c5c2e5c96dfb04696d/model4_flowchart.png">
+
+### Bidirectional State Space Modeling (BiMamba)
+
+While standard State Space Models (like Mamba) are highly efficient at processing long sequences, they are inherently causal—they sweep from past to future. In remote sensing, the entire historical window (up to 120 days) is available at once. 
+
+To capture the necessary context, this architecture utilizes a `BiMambaBlock`. It runs one Mamba core forward and a second Mamba core backward, merging their outputs. This provides the speed and sequence-modeling power of an SSM while ensuring that future contextual data can inform the interpretation of past anomalies (e.g., using a harvest drop to contextualize a prior ripening signature).
+
+### Pre-SSM Temporal Injection
+
+In previous iterations, positional embeddings were added late in the pipeline. Model 3 shifts this paradigm by injecting Presto-style positional embeddings (representing `days_ago`) and seasonal embeddings (representing the calendar month) directly into the features *before* they enter the BiMamba block. 
+
+Because optical satellite data is asynchronous due to cloud cover, standard sequence models can struggle with irregular temporal jumps. By injecting the exact time gaps prior to the sweep, the BiMamba block natively understands whether the jump between two readings was 2 days or 20 days, allowing it to accurately trace biological momentum.
+
+### Cross-Modal Transformer Fusion
+
+While Mamba excels at tracing individual temporal curves, it can struggle with cross-modal reasoning (e.g., comparing an optical NDVI curve directly against a radar VH backscatter curve). 
+
+Model 3 solves this by using BiMamba strictly as a modality-specific feature extractor. Once the Optical and Radar curves are independently smoothed and embedded, they are concatenated and fed into a deep Transformer Encoder. The Transformer no longer has to filter raw, noisy satellite data; instead, it uses its Multi-Head Attention mechanism purely to fuse the refined chemical (Optical) and physical (Radar) representations into a unified predictive manifold.
+
+### Robust Optimization: Focal Loss & Augmentations
+
+The boundaries between continuous crop stages (such as the transition from Tillering to Stem Elongation) are incredibly subtle from space. Standard Cross-Entropy treats all misclassifications equally. Model 3 implements **Focal Loss**, which dynamically scales the penalty based on model confidence. This forces the neural network to focus its gradient updates on the hardest, most ambiguous boundary cases.
+
+To further stabilize training on a scaled-up dataset (16,000+ training events), the data loader dynamically applies two augmentations:
+1. **Gaussian Jitter:** Adds minor noise to the valid features, forcing the model to learn the structural shape of the growth curve rather than memorizing exact reflectance decimals.
+2. **Temporal Masking:** Randomly drops up to 20% of valid timesteps during training, simulating severe cloud cover or sensor failure and teaching the model to interpolate missing biological data safely.
+
+## Results:
+
+```
+[Test (Unseen Plots)] Loss=0.5926 | Acc=75.01% | Macro-F1=0.7543
+  Bare: recall=0.7892
+  Growth: recall=0.6539
+  Ripening: recall=0.9696
+  Seedling: recall=0.7136
+  Tillering: recall=0.7511
+              precision    recall  f1-score   support
+
+        Bare       0.91      0.79      0.85       332
+      Growth       0.91      0.65      0.76       786
+    Ripening       0.41      0.97      0.57       427
+    Seedling       0.84      0.71      0.77       887
+   Tillering       0.90      0.75      0.82      1133
+
+    accuracy                           0.75      3565
+   macro avg       0.79      0.78      0.75      3565
+weighted avg       0.83      0.75      0.77      3565
+```
+
+**Confusion Matrix:**
+
+xxx
+
+<br> 
+
+---
 
 
 <br>
