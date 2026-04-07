@@ -106,7 +106,7 @@ Finally, while lighter architectures like the Lightweight Temporal Attention Enc
 - The Radar branch uses a CNN + bidirectional GRU stack with masked pooling and linear projection.
 - The two modality embeddings are concatenated and passed through a regularized MLP classifier for 5-stage prediction.
 
-<img width="500" height="450" alt="image" src="https://github.com/zen-zap/pheno_crop/blob/f7eb2b782625d9f2ddc008c5c2e5c96dfb04696d/Model_v2_flowchart.png">
+<img width="500" height="800" alt="image" src="https://github.com/zen-zap/pheno_crop/blob/f7eb2b782625d9f2ddc008c5c2e5c96dfb04696d/Model_v2_flowchart.png">
 
 
 ### Leakage-Aware Data Protocol
@@ -193,7 +193,7 @@ weighted avg       0.81      0.71      0.74      3565
 
 **Confusion Matrix:**
 
-<img width="658" height="586" alt="image" src="https://github.com/user-attachments/assets/b154a55f-a425-4a2d-88c0-2ca4cac3873b" />
+<img width="500" height="450" alt="image" src="https://github.com/user-attachments/assets/b154a55f-a425-4a2d-88c0-2ca4cac3873b" />
 
 <br>
 
@@ -210,7 +210,7 @@ weighted avg       0.81      0.71      0.74      3565
 - Tokens are contextually enriched with three concatenated embeddings: a positional encoding (days ago), a channel embedding (Sensor ID), and a seasonal encoding (calendar month).
 - Heavily corrupted or cloudy optical readings are explicitly masked, allowing the self-attention mechanism to seamlessly route information through available radar tokens.
 
-<img width="500" height="450" alt="image" src="https://github.com/zen-zap/pheno_crop/blob/f7eb2b782625d9f2ddc008c5c2e5c96dfb04696d/model3_flowchrt.png">
+<img width="500" height="700" alt="image" src="https://github.com/zen-zap/pheno_crop/blob/f7eb2b782625d9f2ddc008c5c2e5c96dfb04696d/model3_flowchrt.png">
 
 ### Unified Tokenization and Embedding
 
@@ -253,7 +253,7 @@ weighted avg       0.84      0.76      0.78      3565
 
 **Confusion Matrix:**
 
-xxx
+<img width="500" height="450" alt="image" src="https://github.com/user-attachments/assets/f4c23b19-bc09-49c3-a7b8-3518f5cf5ba1" />
 
 <br> 
 
@@ -270,7 +270,7 @@ xxx
 - The modality-specific sequences are concatenated and passed through a 4-layer Transformer Encoder for cross-modal fusion.
 - The model is optimized using Focal Loss ($\gamma=1.5$) and dynamic data augmentations (Gaussian jitter and temporal masking) to prevent memorization and handle ambiguous class boundaries.
 
-<img width="500" height="450" alt="image" src="https://github.com/zen-zap/pheno_crop/blob/f7eb2b782625d9f2ddc008c5c2e5c96dfb04696d/model4_flowchart.png">
+<img width="500" height="700" alt="image" src="https://github.com/zen-zap/pheno_crop/blob/f7eb2b782625d9f2ddc008c5c2e5c96dfb04696d/model4_flowchart.png">
 
 ### Bidirectional State Space Modeling (BiMamba)
 
@@ -322,11 +322,7 @@ weighted avg       0.83      0.75      0.77      3565
 
 **Confusion Matrix:**
 
-xxx
-
-<br> 
-
----
+<img width="500" height="450" alt="image" src="https://github.com/user-attachments/assets/dd992563-f544-48f0-9392-c7a73501d06c" />
 
 
 <br>
