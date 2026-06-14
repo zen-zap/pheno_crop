@@ -329,6 +329,25 @@ weighted avg       0.83      0.75      0.77      3565
 
 ---
 
+## Computational Complexity Profiling
+
+To evaluate the feasibility of deploying these models, we benchmarked the computational complexity (parameter counts, FLOPs, and inference latency) across all standard baselines and our proposed architectures.
+
+| Model | Parameters | Inference (ms) | Complexity |
+|---|---|---|---|
+| BiLSTM | 574.7K | 3.08 | O(T) |
+| TempCNN | 58.2K | 1.0 | O(T) |
+| TCN | 231.2K | 7.11 | O(T) |
+| Vanilla Transformer | 407.9K | 2.21 | O(T²) |
+| **PhenoCrop-Presto** | **540.5K** | **6.36** | **O(T²)** |
+| **PhenoCrop-BiMamba** | **2.62M** | **60.75** | **O(T)** |
+
+*(Note: Inference latency measured on CPU. BiMamba latency is currently CPU-bound; GPU inference is significantly faster.)*
+
+The profiling script and raw JSON results are available in the [`scripts/`](scripts/) directory.
+
+---
+
 ## References
 
 - [Temporal Self Attention and Multi-Sensor Fusion](https://github.com/ellaampy/CropTypeMapping)
